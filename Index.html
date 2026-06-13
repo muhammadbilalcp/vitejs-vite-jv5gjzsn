@@ -1,1 +1,748 @@
+cat > /mnt/user-data/outputs/index.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Axid AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 56px; border-bottom: 1px solid #1a1a1a; background: #000; position: sticky; top: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; cursor: pointer; color: #fff; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; display: inline-block; }
+  .nav-links { display: flex; align-items: center; gap: 24px; }
+  .nav-btn { background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 0; font-family: inherit; }
+  .nav-btn.active { color: #fff; font-weight: 600; }
+  .nav-btn.admin { color: #f66; font-weight: 600; }
+  .sign-in-btn { background: #fff; color: #000; border: none; border-radius: 10px; padding: 7px 16px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .page { flex: 1; display: none; flex-direction: column; }
+  .page.active { display: flex; }
 
+  /* Home */
+  .home { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 28px; padding: 40px; }
+  .badge { border: 1px solid #333; border-radius: 20px; padding: 6px 16px; font-size: 13px; color: #aaa; display: flex; align-items: center; gap: 6px; }
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: #aaa; }
+  .hero-title { font-size: 96px; font-weight: 300; color: #d0d0d0; letter-spacing: -2px; line-height: 1; }
+  .hero-sub { font-size: 20px; color: #888; }
+  .home-btns { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; justify-content: center; }
+  .start-btn { background: #fff; color: #000; border: none; border-radius: 12px; padding: 14px 28px; font-weight: 600; font-size: 15px; cursor: pointer; font-family: inherit; }
+  .learn-btn { background: none; border: none; color: #ccc; font-size: 15px; cursor: pointer; font-family: inherit; }
+  .ext-link { color: #ccc; font-size: 15px; text-decoration: none; }
+
+  /* About */
+  .about { max-width: 860px; margin: 0 auto; padding: 60px 24px; width: 100%; }
+  .about h1 { font-size: 48px; font-weight: 700; margin-bottom: 16px; }
+  .about p { font-size: 17px; color: #aaa; margin-bottom: 40px; line-height: 1.6; }
+  .features { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #222; border-radius: 16px; overflow: hidden; }
+  .feature { padding: 28px; border-right: 1px solid #222; border-bottom: 1px solid #222; }
+  .feature:nth-child(even) { border-right: none; }
+  .feature:nth-child(5), .feature:nth-child(6) { border-bottom: none; }
+  .feature h3 { font-weight: 600; font-size: 16px; margin-bottom: 8px; }
+  .feature p { color: #888; font-size: 14px; line-height: 1.6; }
+
+  /* Auth */
+  .auth { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .auth-card { background: #0a0a0a; border: 1px solid #222; border-radius: 20px; padding: 40px; width: 100%; max-width: 420px; }
+  .auth-card h2 { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+  .auth-card .sub { color: #666; font-size: 14px; text-align: center; margin-bottom: 32px; }
+  .field { margin-bottom: 16px; }
+  .field label { font-size: 13px; color: #888; margin-bottom: 6px; display: block; }
+  .field input { width: 100%; background: #111; border: 1px solid #333; border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 15px; outline: none; font-family: inherit; }
+  .field input:focus { border-color: #555; }
+  .primary-btn { background: #fff; color: #000; border: none; border-radius: 12px; padding: 12px 24px; font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; font-family: inherit; margin-top: 8px; }
+  .primary-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+  .switch { text-align: center; color: #666; font-size: 13px; margin-top: 20px; }
+  .switch span { color: #fff; cursor: pointer; font-weight: 600; }
+  .error-box { background: #1a0000; border: 1px solid #500; border-radius: 10px; padding: 10px 14px; color: #f88; font-size: 13px; margin-bottom: 16px; }
+
+  /* Chat */
+  .chat-layout { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 56px); }
+  .sidebar { width: 280px; background: #080808; border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; }
+  .sidebar-top { padding: 12px; }
+  .new-chat-btn { background: #1a1a1a; border: none; border-radius: 10px; color: #fff; padding: 10px 16px; font-size: 14px; cursor: pointer; width: 100%; text-align: left; font-family: inherit; }
+  .history-label { font-size: 11px; color: #444; padding: 8px 16px; letter-spacing: 1px; }
+  .history-list { flex: 1; overflow-y: auto; }
+  .session-item { padding: 10px 16px; color: #777; font-size: 13px; cursor: pointer; border-radius: 8px; margin: 2px 8px; display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .session-item:hover, .session-item.active { background: #1a1a1a; color: #fff; }
+  .sidebar-bottom { border-top: 1px solid #1a1a1a; padding: 16px; }
+  .user-email { font-size: 12px; color: #555; margin-bottom: 4px; }
+  .signout-btn { background: none; border: none; color: #666; font-size: 13px; cursor: pointer; padding: 0; font-family: inherit; }
+  .chat-main { flex: 1; display: flex; flex-direction: column; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 40px 60px; }
+  .chat-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .chat-empty h2 { font-size: 36px; font-weight: 600; margin-bottom: 12px; }
+  .chat-empty p { color: #555; font-size: 15px; }
+  .messages-inner { display: flex; flex-direction: column; gap: 20px; max-width: 720px; margin: 0 auto; }
+  .msg { display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .msg.assistant { justify-content: flex-start; align-items: flex-start; }
+  .ai-avatar { width: 28px; height: 28px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-right: 10px; flex-shrink: 0; margin-top: 4px; }
+  .bubble { border-radius: 16px; padding: 12px 18px; max-width: 80%; font-size: 15px; line-height: 1.7; white-space: pre-wrap; }
+  .bubble.user { background: #1a1a1a; color: #d0d0d0; }
+  .bubble.assistant { border: 1px solid #1e1e1e; color: #d0d0d0; }
+  .typing { color: #444; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+  .chat-input-area { padding: 16px 60px 24px; border-top: 1px solid #111; }
+  .chat-input-wrap { display: flex; align-items: center; background: #111; border: 1px solid #2a2a2a; border-radius: 16px; padding: 10px 16px; gap: 12px; max-width: 720px; margin: 0 auto; }
+  .chat-input-wrap input { flex: 1; background: none; border: none; outline: none; color: #fff; font-size: 15px; font-family: inherit; }
+  .send-btn { background: #222; border: none; border-radius: 10px; width: 34px; height: 34px; cursor: pointer; font-size: 14px; color: #555; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .send-btn.ready { background: #fff; color: #000; }
+
+  /* Feedback */
+  .feedback { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
+  .feedback h1 { font-size: 52px; font-weight: 700; margin-bottom: 12px; }
+  .feedback > p { color: #888; font-size: 16px; margin-bottom: 40px; }
+  .feedback-card { background: #0a0a0a; border: 1px solid #222; border-radius: 20px; padding: 40px; width: 100%; max-width: 580px; }
+  .stars { display: flex; gap: 12px; justify-content: center; margin: 14px 0; }
+  .star { font-size: 30px; cursor: pointer; color: #333; }
+  .star.on { color: #fff; }
+  .feedback-card textarea { width: 100%; background: #111; border: 1px solid #333; border-radius: 12px; padding: 16px; color: #fff; font-size: 15px; outline: none; resize: vertical; min-height: 140px; font-family: inherit; }
+  .success-msg { text-align: center; font-size: 20px; padding: 20px 0; }
+
+  /* Contact */
+  .contact { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+  .contact h1 { font-size: 52px; font-weight: 700; margin-bottom: 16px; }
+  .contact > p { color: #888; font-size: 16px; margin-bottom: 48px; max-width: 520px; }
+  .contact-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .contact-card { background: #0a0a0a; border: 1px solid #222; border-radius: 16px; padding: 32px 28px; width: 220px; text-align: left; }
+  .contact-icon { width: 48px; height: 48px; background: #1a1a1a; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px; }
+  .contact-card h3 { font-weight: 600; font-size: 17px; margin-bottom: 6px; }
+  .contact-card p { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .contact-btn { background: #1a1a1a; border: none; border-radius: 10px; color: #fff; padding: 11px 0; font-size: 13px; cursor: pointer; width: 100%; font-family: inherit; }
+
+  /* Admin */
+  .admin { max-width: 1000px; margin: 0 auto; padding: 40px 24px; width: 100%; }
+  .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .admin h1 { font-size: 36px; font-weight: 700; }
+  .admin-sub { color: #555; font-size: 14px; margin-top: 4px; }
+  .tab-btns { display: flex; gap: 10px; }
+  .tab-btn { background: transparent; color: #888; border: 1px solid #333; border-radius: 10px; padding: 8px 20px; font-size: 14px; cursor: pointer; font-weight: 600; font-family: inherit; }
+  .tab-btn.active { background: #fff; color: #000; }
+  .user-row { background: #0a0a0a; border: 1px solid #1e1e1e; border-radius: 14px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .user-name { font-weight: 600; font-size: 15px; }
+  .user-email-txt { color: #666; font-size: 13px; margin-top: 2px; }
+  .blocked-badge { color: #f44; font-size: 12px; margin-top: 4px; }
+  .user-actions { display: flex; gap: 10px; }
+  .view-btn { background: #1a1a1a; border: none; border-radius: 8px; color: #fff; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .block-btn { border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .block-btn.block { background: #0a1a0a; border: 1px solid #050; color: #6f6; }
+  .block-btn.unblock { background: #1a0000; border: 1px solid #500; color: #f66; }
+  .session-row { background: #0a0a0a; border: 1px solid #1e1e1e; border-radius: 12px; padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .back-btn { background: none; border: none; color: #888; font-size: 14px; cursor: pointer; margin-bottom: 20px; font-family: inherit; }
+  .feedback-row { background: #0a0a0a; border: 1px solid #1e1e1e; border-radius: 14px; padding: 20px 24px; margin-bottom: 12px; }
+  .feedback-meta { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .feedback-email { color: #888; font-size: 13px; }
+  .feedback-stars { color: #f5c518; font-size: 16px; }
+  .feedback-text { color: #ccc; font-size: 15px; line-height: 1.6; }
+  .empty-msg { color: #555; text-align: center; padding: 40px; }
+  .msg-viewer { display: flex; flex-direction: column; gap: 14px; }
+  .msg-bubble { border: 1px solid #222; border-radius: 14px; padding: 12px 18px; max-width: 80%; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #d0d0d0; }
+  .msg-bubble.user-msg { background: #1a1a1a; align-self: flex-end; }
+  .msg-bubble.ai-msg { background: #0d0d0d; align-self: flex-start; }
+  .msg-sender { font-size: 11px; color: #555; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo" onclick="showPage('home')">
+    <span class="dot"></span>
+    Axid AI
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn active" id="nav-home" onclick="showPage('home')">Home</button>
+    <button class="nav-btn" id="nav-about" onclick="showPage('about')">About</button>
+    <button class="nav-btn" id="nav-chat" onclick="showPage('chat')">Chat</button>
+    <button class="nav-btn" id="nav-contact" onclick="showPage('contact')">Contact</button>
+    <button class="nav-btn" id="nav-feedback" onclick="showPage('feedback')">Feedback</button>
+    <button class="nav-btn admin" id="nav-admin" onclick="showPage('admin')" style="display:none">Admin</button>
+    <button class="sign-in-btn" id="auth-btn" onclick="showPage('auth')">Sign in</button>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="home">
+    <div class="badge"><span class="badge-dot"></span> Now in early access</div>
+    <h1 class="hero-title">Axid AI</h1>
+    <p class="hero-sub">Your futuristic AI assistant for everything.</p>
+    <div class="home-btns">
+      <button class="start-btn" onclick="showPage('chat')">Start Chatting →</button>
+      <button class="learn-btn" onclick="showPage('about')">Learn more</button>
+      <a class="ext-link" href="https://youtube.com" target="_blank">▶ YouTube</a>
+      <a class="ext-link" href="https://instagram.com/axidaiofficial" target="_blank">◻ Instagram</a>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<div class="page" id="page-about">
+  <div class="about">
+    <h1>About Axid AI</h1>
+    <p>Axid AI is your all-in-one futuristic AI assistant — designed to feel calm, professional, and fast. We help you think, build, learn, and create.</p>
+    <div class="features">
+      <div class="feature"><h3>Learning</h3><p>Summaries, study guides, flashcards, and clear explanations on any subject.</p></div>
+      <div class="feature"><h3>Chatting</h3><p>Friendly conversation, brainstorming, and ideation whenever you need a partner.</p></div>
+      <div class="feature"><h3>Coding</h3><p>Write, debug, refactor, and understand code across many languages.</p></div>
+      <div class="feature"><h3>Creativity</h3><p>Movie ideas, stories, Roblox help, lyrics, image generation and more.</p></div>
+      <div class="feature"><h3>Everyday tasks</h3><p>Plan trips, draft emails, organize to-dos, and answer quick questions.</p></div>
+      <div class="feature"><h3>Image generation</h3><p>Just ask Axid to draw or generate an image — it handles the rest.</p></div>
+    </div>
+    <button class="primary-btn" style="margin-top:40px;width:auto;padding:14px 28px" onclick="showPage('chat')">Start chatting</button>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div class="page" id="page-auth">
+  <div class="auth">
+    <div class="auth-card">
+      <h2 id="auth-title">Welcome back</h2>
+      <p class="sub" id="auth-sub">Sign in to Axid AI</p>
+      <div class="field" id="name-field" style="display:none">
+        <label>Name</label>
+        <input type="text" id="auth-name" placeholder="Your name" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()" />
+      </div>
+      <div class="error-box" id="auth-error" style="display:none"></div>
+      <button class="primary-btn" id="auth-submit" onclick="doAuth()">Sign in</button>
+      <div class="switch">
+        <span id="auth-switch-text">Don't have an account? </span>
+        <span onclick="toggleAuthMode()"><span id="auth-switch-link">Sign up</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="page" id="page-chat">
+  <div class="chat-layout">
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <button class="new-chat-btn" onclick="newSession()">+ New chat</button>
+      </div>
+      <div class="history-label">HISTORY</div>
+      <div class="history-list" id="session-list"></div>
+      <div class="sidebar-bottom">
+        <div class="user-email" id="sidebar-email"></div>
+        <button class="signout-btn" onclick="doSignOut()">Sign out</button>
+      </div>
+    </div>
+    <div class="chat-main">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-empty" id="chat-empty">
+          <h2>How can I help you today?</h2>
+          <p>Start a new chat or select one from the sidebar.</p>
+        </div>
+        <div class="messages-inner" id="messages-inner" style="display:none"></div>
+      </div>
+      <div class="chat-input-area">
+        <div class="chat-input-wrap">
+          <input type="text" id="chat-input" placeholder="Message Axid AI..." onkeydown="if(event.key==='Enter')sendMessage()" oninput="updateSendBtn()" />
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK -->
+<div class="page" id="page-feedback">
+  <div class="feedback">
+    <h1>Feedback</h1>
+    <p>Help us improve Axid AI by sharing your experience.</p>
+    <div class="feedback-card" id="feedback-card">
+      <div style="text-align:center">
+        <div style="color:#888;font-size:14px">Your rating</div>
+        <div class="stars" id="stars">
+          <span class="star" onclick="setRating(1)" onmouseover="hoverRating(1)" onmouseout="unhoverRating()">★</span>
+          <span class="star" onclick="setRating(2)" onmouseover="hoverRating(2)" onmouseout="unhoverRating()">★</span>
+          <span class="star" onclick="setRating(3)" onmouseover="hoverRating(3)" onmouseout="unhoverRating()">★</span>
+          <span class="star" onclick="setRating(4)" onmouseover="hoverRating(4)" onmouseout="unhoverRating()">★</span>
+          <span class="star" onclick="setRating(5)" onmouseover="hoverRating(5)" onmouseout="unhoverRating()">★</span>
+        </div>
+      </div>
+      <textarea id="feedback-text" placeholder="Write your feedback here..."></textarea>
+      <button class="primary-btn" style="margin-top:16px" onclick="submitFeedback()">Submit Feedback</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div class="page" id="page-contact">
+  <div class="contact">
+    <h1>Contact Axid AI</h1>
+    <p>Need help, have feedback, or want to collaborate? Reach out through any of the methods below.</p>
+    <div class="contact-cards">
+      <div class="contact-card">
+        <div class="contact-icon">💬</div>
+        <h3>WhatsApp</h3>
+        <p>Chat directly with us</p>
+        <a href="https://wa.me/" target="_blank"><button class="contact-btn">Chat on WhatsApp</button></a>
+      </div>
+      <div class="contact-card">
+        <div class="contact-icon">✉️</div>
+        <h3>Email</h3>
+        <p>muhammadbilalcp@gmail.com</p>
+        <a href="mailto:muhammadbilalcp@gmail.com"><button class="contact-btn">Send an Email</button></a>
+      </div>
+      <div class="contact-card">
+        <div class="contact-icon">📷</div>
+        <h3>Instagram</h3>
+        <p>@axidaiofficial</p>
+        <a href="https://instagram.com/axidaiofficial" target="_blank"><button class="contact-btn">Open Instagram</button></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="page" id="page-admin">
+  <div class="admin">
+    <div class="admin-header">
+      <div>
+        <h1>Admin Panel</h1>
+        <div class="admin-sub" id="admin-sub"></div>
+      </div>
+      <div class="tab-btns">
+        <button class="tab-btn active" id="tab-users" onclick="switchAdminTab('users')">Users</button>
+        <button class="tab-btn" id="tab-feedback" onclick="switchAdminTab('feedback')">Feedback</button>
+      </div>
+    </div>
+    <div id="admin-users-view">
+      <div id="users-list"></div>
+    </div>
+    <div id="admin-feedback-view" style="display:none">
+      <div id="feedback-list"></div>
+    </div>
+    <div id="admin-chats-view" style="display:none">
+      <button class="back-btn" onclick="backToUsers()">← Back to users</button>
+      <h2 id="chats-title" style="font-size:22px;font-weight:600;margin-bottom:20px;color:#fff"></h2>
+      <div id="chats-list"></div>
+    </div>
+    <div id="admin-messages-view" style="display:none">
+      <button class="back-btn" onclick="backToChats()">← Back to chats</button>
+      <h2 id="messages-title" style="font-size:20px;font-weight:600;margin-bottom:24px;color:#fff"></h2>
+      <div class="msg-viewer" id="messages-view-list"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, setDoc, getDoc, query, orderBy, onSnapshot, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyB2RZlRNlTONf4xuxjPMcZgedc9wbIhj-4",
+  authDomain: "axid-ai.firebaseapp.com",
+  projectId: "axid-ai",
+  storageBucket: "axid-ai.firebasestorage.app",
+  messagingSenderId: "354519561790",
+  appId: "1:354519561790:web:e2b25803bcd713aea4836f"
+};
+const GEMINI_KEY = "AIzaSyAb8RN6JNbpO8ho30lRkYVCDOrmU1eNjLHAf_DE-_WuomEEQ_xw";
+const ADMIN_EMAIL = "muhammadbilalcp@gmail.com";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
+
+const app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let currentSession = null;
+let sessions = [];
+let messages = [];
+let authMode = "signin";
+let rating = 0;
+let adminTab = "users";
+let selectedAdminUser = null;
+let selectedAdminSession = null;
+let sessionUnsub = null;
+let messagesUnsub = null;
+
+// ── Auth state ──────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    try {
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists() && userDoc.data().blocked) {
+        await signOut(auth);
+        return;
+      }
+    } catch(e) {}
+    currentUser = user;
+    document.getElementById("auth-btn").textContent = "Sign out";
+    document.getElementById("auth-btn").onclick = doSignOut;
+    document.getElementById("sidebar-email").textContent = user.email;
+    if (user.email === ADMIN_EMAIL) {
+      document.getElementById("nav-admin").style.display = "block";
+    }
+    loadSessions();
+  } else {
+    currentUser = null;
+    document.getElementById("auth-btn").textContent = "Sign in";
+    document.getElementById("auth-btn").onclick = () => showPage("auth");
+    document.getElementById("nav-admin").style.display = "none";
+  }
+});
+
+// ── Page navigation ─────────────────────────────────────────────────────────
+window.showPage = function(page) {
+  if (page === "chat" && !currentUser) { showPage("auth"); return; }
+  if (page === "admin" && (!currentUser || currentUser.email !== ADMIN_EMAIL)) return;
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("page-" + page).classList.add("active");
+  const nb = document.getElementById("nav-" + page);
+  if (nb) nb.classList.add("active");
+  if (page === "admin") loadAdminData();
+};
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+window.toggleAuthMode = function() {
+  authMode = authMode === "signin" ? "signup" : "signin";
+  const isSignup = authMode === "signup";
+  document.getElementById("auth-title").textContent = isSignup ? "Create account" : "Welcome back";
+  document.getElementById("auth-sub").textContent = isSignup ? "Join Axid AI today" : "Sign in to Axid AI";
+  document.getElementById("name-field").style.display = isSignup ? "block" : "none";
+  document.getElementById("auth-submit").textContent = isSignup ? "Create account" : "Sign in";
+  document.getElementById("auth-switch-text").textContent = isSignup ? "Already have an account? " : "Don't have an account? ";
+  document.getElementById("auth-switch-link").textContent = isSignup ? "Sign in" : "Sign up";
+  document.getElementById("auth-error").style.display = "none";
+};
+
+window.doAuth = async function() {
+  const email = document.getElementById("auth-email").value.trim();
+  const password = document.getElementById("auth-password").value;
+  const name = document.getElementById("auth-name").value.trim();
+  const errBox = document.getElementById("auth-error");
+  const btn = document.getElementById("auth-submit");
+  errBox.style.display = "none";
+  btn.disabled = true;
+  btn.textContent = "Loading...";
+  try {
+    if (authMode === "signup") {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "users", cred.user.uid), {
+        name, email, uid: cred.user.uid, blocked: false, createdAt: serverTimestamp()
+      });
+    } else {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const ud = await getDoc(doc(db, "users", cred.user.uid));
+      if (ud.exists() && ud.data().blocked) {
+        await signOut(auth);
+        throw new Error("Your account has been blocked.");
+      }
+    }
+    showPage("chat");
+  } catch(e) {
+    errBox.textContent = e.message.replace("Firebase: ", "").replace(/\(auth.*\)\.?/, "");
+    errBox.style.display = "block";
+  }
+  btn.disabled = false;
+  btn.textContent = authMode === "signin" ? "Sign in" : "Create account";
+};
+
+window.doSignOut = async function() {
+  await signOut(auth);
+  currentUser = null;
+  currentSession = null;
+  sessions = [];
+  messages = [];
+  document.getElementById("session-list").innerHTML = "";
+  document.getElementById("messages-inner").innerHTML = "";
+  showPage("home");
+};
+
+// ── Chat ────────────────────────────────────────────────────────────────────
+function loadSessions() {
+  if (!currentUser) return;
+  if (sessionUnsub) sessionUnsub();
+  const q = query(collection(db, "users", currentUser.uid, "sessions"), orderBy("updatedAt", "desc"));
+  sessionUnsub = onSnapshot(q, snap => {
+    sessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderSessions();
+  });
+}
+
+function renderSessions() {
+  const list = document.getElementById("session-list");
+  list.innerHTML = sessions.map(s => `
+    <div class="session-item ${currentSession === s.id ? 'active' : ''}" onclick="selectSession('${s.id}')">
+      <span style="opacity:0.5;font-size:12px">💬</span>
+      <span style="overflow:hidden;text-overflow:ellipsis">${s.title || "New chat"}</span>
+    </div>
+  `).join("");
+}
+
+window.selectSession = function(id) {
+  currentSession = id;
+  renderSessions();
+  loadMessages(id);
+};
+
+function loadMessages(sessionId) {
+  if (!currentUser) return;
+  if (messagesUnsub) messagesUnsub();
+  const q = query(collection(db, "users", currentUser.uid, "sessions", sessionId, "messages"), orderBy("createdAt"));
+  messagesUnsub = onSnapshot(q, snap => {
+    messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderMessages();
+  });
+}
+
+function renderMessages() {
+  const empty = document.getElementById("chat-empty");
+  const inner = document.getElementById("messages-inner");
+  if (!currentSession) {
+    empty.style.display = "flex";
+    empty.querySelector("p").textContent = "Start a new chat or select one from the sidebar.";
+    inner.style.display = "none";
+    return;
+  }
+  if (messages.length === 0) {
+    empty.style.display = "flex";
+    empty.querySelector("p").textContent = "Ask anything. Axid AI is ready.";
+    inner.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  inner.style.display = "flex";
+  inner.innerHTML = messages.map(m => `
+    <div class="msg ${m.role}">
+      ${m.role === "assistant" ? '<div class="ai-avatar">A</div>' : ""}
+      <div class="bubble ${m.role}">${escapeHtml(m.content)}</div>
+    </div>
+  `).join("");
+  inner.scrollTop = inner.scrollHeight;
+  document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
+}
+
+window.newSession = async function() {
+  if (!currentUser) return;
+  const ref = await addDoc(collection(db, "users", currentUser.uid, "sessions"), {
+    title: "New chat", createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  });
+  currentSession = ref.id;
+  messages = [];
+  renderSessions();
+  renderMessages();
+};
+
+window.updateSendBtn = function() {
+  const input = document.getElementById("chat-input").value.trim();
+  const btn = document.getElementById("send-btn");
+  btn.className = input && currentSession ? "send-btn ready" : "send-btn";
+};
+
+window.sendMessage = async function() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text || !currentSession || !currentUser) return;
+  input.value = "";
+  updateSendBtn();
+
+  await addDoc(collection(db, "users", currentUser.uid, "sessions", currentSession, "messages"), {
+    role: "user", content: text, createdAt: serverTimestamp()
+  });
+
+  if (messages.length === 0) {
+    await updateDoc(doc(db, "users", currentUser.uid, "sessions", currentSession), {
+      title: text.slice(0, 40), updatedAt: serverTimestamp()
+    });
+  } else {
+    await updateDoc(doc(db, "users", currentUser.uid, "sessions", currentSession), { updatedAt: serverTimestamp() });
+  }
+
+  // Show typing
+  const inner = document.getElementById("messages-inner");
+  inner.style.display = "flex";
+  document.getElementById("chat-empty").style.display = "none";
+  const typingEl = document.createElement("div");
+  typingEl.className = "typing";
+  typingEl.id = "typing-indicator";
+  typingEl.innerHTML = '<div class="ai-avatar">A</div> Axid is thinking...';
+  inner.appendChild(typingEl);
+  inner.scrollTop = inner.scrollHeight;
+
+  try {
+    const history = messages.map(m => ({
+      role: m.role === "user" ? "user" : "model",
+      parts: [{ text: m.content }]
+    }));
+    history.push({ role: "user", parts: [{ text }] });
+
+    const res = await fetch(GEMINI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: "You are Axid AI, a futuristic AI assistant. Be helpful, concise, and professional." }] },
+        contents: history
+      })
+    });
+    const data = await res.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't respond.";
+
+    await addDoc(collection(db, "users", currentUser.uid, "sessions", currentSession, "messages"), {
+      role: "assistant", content: reply, createdAt: serverTimestamp()
+    });
+  } catch(e) {
+    await addDoc(collection(db, "users", currentUser.uid, "sessions", currentSession, "messages"), {
+      role: "assistant", content: "Something went wrong. Please try again.", createdAt: serverTimestamp()
+    });
+  }
+
+  const t = document.getElementById("typing-indicator");
+  if (t) t.remove();
+};
+
+// ── Feedback ────────────────────────────────────────────────────────────────
+window.setRating = function(r) {
+  rating = r;
+  renderStars(r);
+};
+window.hoverRating = function(r) { renderStars(r); };
+window.unhoverRating = function() { renderStars(rating); };
+
+function renderStars(r) {
+  document.querySelectorAll(".star").forEach((s, i) => {
+    s.className = i < r ? "star on" : "star";
+  });
+}
+
+window.submitFeedback = async function() {
+  const text = document.getElementById("feedback-text").value;
+  await addDoc(collection(db, "feedback"), {
+    rating, text, email: currentUser?.email || "anonymous", createdAt: serverTimestamp()
+  });
+  document.getElementById("feedback-card").innerHTML = '<div class="success-msg">Thank you for your feedback! 🎉</div>';
+};
+
+// ── Admin ───────────────────────────────────────────────────────────────────
+function loadAdminData() {
+  document.getElementById("admin-sub").textContent = "Logged in as " + (currentUser?.email || "");
+  loadAdminUsers();
+  loadAdminFeedback();
+}
+
+function loadAdminUsers() {
+  onSnapshot(collection(db, "users"), snap => {
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById("tab-users").textContent = `Users (${users.length})`;
+    document.getElementById("users-list").innerHTML = users.length === 0
+      ? '<div class="empty-msg">No users yet.</div>'
+      : users.map(u => `
+        <div class="user-row">
+          <div>
+            <div class="user-name">${u.name || "No name"}</div>
+            <div class="user-email-txt">${u.email}</div>
+            ${u.blocked ? '<div class="blocked-badge">● Blocked</div>' : ""}
+          </div>
+          <div class="user-actions">
+            <button class="view-btn" onclick="viewUserChats('${u.id}','${escapeHtml(u.name || u.email)}')">View Chats</button>
+            <button class="block-btn ${u.blocked ? 'unblock' : 'block'}" onclick="toggleBlock('${u.id}',${u.blocked})">
+              ${u.blocked ? "Unblock" : "Block"}
+            </button>
+          </div>
+        </div>
+      `).join("");
+  });
+}
+
+function loadAdminFeedback() {
+  const q = query(collection(db, "feedback"), orderBy("createdAt", "desc"));
+  onSnapshot(q, snap => {
+    const fb = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById("tab-feedback").textContent = `Feedback (${fb.length})`;
+    document.getElementById("feedback-list").innerHTML = fb.length === 0
+      ? '<div class="empty-msg">No feedback yet.</div>'
+      : fb.map(f => `
+        <div class="feedback-row">
+          <div class="feedback-meta">
+            <span class="feedback-email">${f.email}</span>
+            <span class="feedback-stars">${"★".repeat(f.rating || 0)}${"☆".repeat(5 - (f.rating || 0))}</span>
+          </div>
+          <p class="feedback-text">${f.text || '<span style="color:#555">No written feedback.</span>'}</p>
+        </div>
+      `).join("");
+  });
+}
+
+window.switchAdminTab = function(tab) {
+  adminTab = tab;
+  document.getElementById("tab-users").className = tab === "users" ? "tab-btn active" : "tab-btn";
+  document.getElementById("tab-feedback").className = tab === "feedback" ? "tab-btn active" : "tab-btn";
+  document.getElementById("admin-users-view").style.display = tab === "users" ? "block" : "none";
+  document.getElementById("admin-feedback-view").style.display = tab === "feedback" ? "block" : "none";
+  document.getElementById("admin-chats-view").style.display = "none";
+  document.getElementById("admin-messages-view").style.display = "none";
+};
+
+window.toggleBlock = async function(uid, isBlocked) {
+  await updateDoc(doc(db, "users", uid), { blocked: !isBlocked });
+};
+
+window.viewUserChats = async function(uid, name) {
+  selectedAdminUser = { id: uid, name };
+  document.getElementById("chats-title").textContent = "Chats for " + name;
+  document.getElementById("admin-users-view").style.display = "none";
+  document.getElementById("admin-chats-view").style.display = "block";
+
+  const q = query(collection(db, "users", uid, "sessions"), orderBy("updatedAt", "desc"));
+  const snap = await getDocs(q);
+  const chats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  document.getElementById("chats-list").innerHTML = chats.length === 0
+    ? '<div class="empty-msg">No chats yet.</div>'
+    : chats.map(c => `
+      <div class="session-row" onclick="viewSessionMessages('${c.id}','${escapeHtml(c.title || "Untitled")}')">
+        <span style="color:#fff">${c.title || "Untitled chat"}</span>
+        <span style="color:#555">→</span>
+      </div>
+    `).join("");
+};
+
+window.viewSessionMessages = async function(sessionId, title) {
+  selectedAdminSession = { id: sessionId, title };
+  document.getElementById("messages-title").textContent = title;
+  document.getElementById("admin-chats-view").style.display = "none";
+  document.getElementById("admin-messages-view").style.display = "block";
+
+  const q = query(collection(db, "users", selectedAdminUser.id, "sessions", sessionId, "messages"), orderBy("createdAt"));
+  const snap = await getDocs(q);
+  const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  document.getElementById("messages-view-list").innerHTML = msgs.map(m => `
+    <div style="display:flex;justify-content:${m.role === 'user' ? 'flex-end' : 'flex-start'}">
+      <div class="msg-bubble ${m.role === 'user' ? 'user-msg' : 'ai-msg'}">
+        <div class="msg-sender">${m.role === "user" ? selectedAdminUser.name : "Axid AI"}</div>
+        ${escapeHtml(m.content)}
+      </div>
+    </div>
+  `).join("");
+};
+
+window.backToUsers = function() {
+  document.getElementById("admin-chats-view").style.display = "none";
+  document.getElementById("admin-users-view").style.display = "block";
+};
+
+window.backToChats = function() {
+  document.getElementById("admin-messages-view").style.display = "none";
+  document.getElementById("admin-chats-view").style.display = "block";
+};
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+</script>
+</body>
+</html>
+HTMLEOF
+echo "done"
